@@ -1,4 +1,4 @@
-package fr.esgi.fab.okina.model;
+package fr.esgi.fab.okina.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,7 +17,6 @@ public class Board {
     private String ownerId;
     private LocalDateTime createdAt;
 
-    // Chargés séparément par le Repository
     private List<User> members = new ArrayList<>();
     private List<Task> tasks = new ArrayList<>();
 }

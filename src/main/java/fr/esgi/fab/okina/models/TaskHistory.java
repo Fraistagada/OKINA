@@ -1,4 +1,4 @@
-package fr.esgi.fab.okina.model;
+package fr.esgi.fab.okina.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

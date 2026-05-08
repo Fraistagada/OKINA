@@ -1,4 +1,4 @@
-package fr.esgi.fab.okina.model;
+package fr.esgi.fab.okina.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,6 +13,6 @@ public class User {
     private String id;
     private String pseudo;
     private String email;
-    private String password; // hashé en bcrypt
+    private String hash;
     private LocalDateTime createdAt;
 }

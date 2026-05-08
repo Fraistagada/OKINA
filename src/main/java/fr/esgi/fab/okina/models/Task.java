@@ -1,4 +1,4 @@
-package fr.esgi.fab.okina.model;
+package fr.esgi.fab.okina.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,12 +16,11 @@ public class Task {
     private String boardId;
     private String title;
     private String description;
-    private String typeId;      // "standard", "bug", "spike", "amelioration"
-    private String columnId;    // "todo", "doing", "done"
+    private String typeId;
+    private String columnId;
     private String assigneeId;
     private LocalDateTime createdAt;
 
-    // Chargés séparément par le Repository
     private List<Comment> comments = new ArrayList<>();
     private List<Attachment> attachments = new ArrayList<>();
     private List<TaskHistory> history = new ArrayList<>();
