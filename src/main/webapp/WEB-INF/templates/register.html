@@ -1,0 +1,157 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OKINA – Inscription</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <!-- Panneau gauche -->
+      <aside class="auth-aside">
+        <div class="auth-brand">
+          <div class="mark">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <span>OKINA Kanban</span>
+        </div>
+
+        <div>
+          <h1>Vos projets, vos données, votre infrastructure.</h1>
+          <p>
+            Une alternative souveraine aux outils de gestion de projet hébergés
+            à l'étranger. Pensée pour les équipes OKINA.
+          </p>
+        </div>
+
+        <div class="preview-card" aria-hidden="true">
+          <div class="preview-col">
+            <div class="col-h">À faire</div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #e0394a"></span>
+              <span>Tâche 1</span>
+            </div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #6b7280"></span>
+              <span>Item suivi</span>
+            </div>
+          </div>
+          <div class="preview-col">
+            <div class="col-h">En cours</div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #3b6ef5"></span>
+              <span>Tâche 2</span>
+            </div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #b45ee0"></span>
+              <span>Item suivi</span>
+            </div>
+          </div>
+          <div class="preview-col">
+            <div class="col-h">Terminé</div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #1f9c70"></span>
+              <span>Tâche 3</span>
+            </div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #1f9c70"></span>
+              <span>Item suivi</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Formulaire d'inscription -->
+      <div class="auth-form-wrap">
+        <form class="auth-form" method="post" th:action="@{/register}">
+          <h2 class="form-title">Créer un compte</h2>
+          <p class="form-sub">Rejoignez votre équipe sur OKINA Kanban.</p>
+
+          <div class="field">
+            <label for="pseudo">Pseudo</label>
+            <input
+              type="text"
+              id="pseudo"
+              name="pseudo"
+              th:value="${pseudo}"
+              autofocus
+            />
+            <span class="hint">Sera unique sur la plateforme.</span>
+            <!-- Erreur pseudo spécifique -->
+            <span
+              class="err"
+              th:if="${erreur != null and #strings.contains(erreur, 'pseudo')}"
+              th:text="${erreur}"
+            ></span>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" th:value="${email}" />
+            <span
+              class="err"
+              th:if="${erreur != null and #strings.contains(erreur, 'mail')}"
+              th:text="${erreur}"
+            ></span>
+          </div>
+
+          <div class="field">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="password" />
+            <span class="hint">Minimum 8 caractères.</span>
+            <span
+              class="err"
+              th:if="${erreur != null and #strings.contains(erreur, 'passe')}"
+              th:text="${erreur}"
+            ></span>
+          </div>
+
+          <!-- Erreur générique (serveur, doublon, etc.) -->
+          <div
+            class="field"
+            th:if="${erreur != null
+                and !#strings.contains(erreur, 'pseudo')
+                and !#strings.contains(erreur, 'mail')
+                and !#strings.contains(erreur, 'passe')}"
+          >
+            <span class="err" th:text="${erreur}"></span>
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary btn-block"
+            style="margin-top: 8px"
+          >
+            Créer le compte
+          </button>
+
+          <p class="switch">
+            Déjà inscrit·e ? <a th:href="@{/login}">Se connecter</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
