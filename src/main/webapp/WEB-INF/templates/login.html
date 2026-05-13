@@ -1,137 +1,133 @@
 <!doctype html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
     <title>OKINA – Connexion</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link
-            crossorigin="anonymous"
-            href="https://fonts.gstatic.com"
-            rel="preconnect"
+      crossorigin="anonymous"
+      href="https://fonts.gstatic.com"
+      rel="preconnect"
     />
     <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-            rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
     />
-    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
-</head>
-<body>
-<div class="auth-shell">
-    <!-- Panneau gauche décoratif -->
-    <aside class="auth-aside">
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <!-- Panneau gauche décoratif -->
+      <aside class="auth-aside">
         <div class="auth-brand">
-            <div class="mark">
-                <svg
-                        fill="none"
-                        height="18"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.8"
-                        viewBox="0 0 24 24"
-                        width="18"
-                >
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-            </div>
-            <span>OKINA Kanban</span>
+          <div class="mark">
+            <svg
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="18"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <span>OKINA Kanban</span>
         </div>
 
         <div>
-            <h1>Vos projets, vos données, votre infrastructure.</h1>
-            <p>
-                Une alternative souveraine aux outils de gestion de projet hébergés
-                à l'étranger. Pensée pour les équipes OKINA.
-            </p>
+          <h1>Vos projets, vos données, votre infrastructure.</h1>
+          <p>
+            Une alternative souveraine aux outils de gestion de projet hébergés
+            à l'étranger. Pensée pour les équipes OKINA.
+          </p>
         </div>
 
         <!-- Mini preview du tableau Kanban -->
         <div aria-hidden="true" class="preview-card">
-            <div class="preview-col">
-                <div class="col-h">À faire</div>
-                <div class="preview-card-mini">
-                    <span class="dot" style="background: #e0394a"></span>
-                    <span>Tâche 1</span>
-                </div>
-                <div class="preview-card-mini">
-                    <span class="dot" style="background: #6b7280"></span>
-                    <span>Item suivi</span>
-                </div>
+          <div class="preview-col">
+            <div class="col-h">À faire</div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #e0394a"></span>
+              <span>Tâche 1</span>
             </div>
-            <div class="preview-col">
-                <div class="col-h">En cours</div>
-                <div class="preview-card-mini">
-                    <span class="dot" style="background: #3b6ef5"></span>
-                    <span>Tâche 2</span>
-                </div>
-                <div class="preview-card-mini">
-                    <span class="dot" style="background: #b45ee0"></span>
-                    <span>Item suivi</span>
-                </div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #6b7280"></span>
+              <span>Item suivi</span>
             </div>
-            <div class="preview-col">
-                <div class="col-h">Terminé</div>
-                <div class="preview-card-mini">
-                    <span class="dot" style="background: #1f9c70"></span>
-                    <span>Tâche 3</span>
-                </div>
-                <div class="preview-card-mini">
-                    <span class="dot" style="background: #1f9c70"></span>
-                    <span>Item suivi</span>
-                </div>
+          </div>
+          <div class="preview-col">
+            <div class="col-h">En cours</div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #3b6ef5"></span>
+              <span>Tâche 2</span>
             </div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #b45ee0"></span>
+              <span>Item suivi</span>
+            </div>
+          </div>
+          <div class="preview-col">
+            <div class="col-h">Terminé</div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #1f9c70"></span>
+              <span>Tâche 3</span>
+            </div>
+            <div class="preview-card-mini">
+              <span class="dot" style="background: #1f9c70"></span>
+              <span>Item suivi</span>
+            </div>
+          </div>
         </div>
-    </aside>
+      </aside>
 
-    <!-- Formulaire de connexion -->
-    <div class="auth-form-wrap">
+      <!-- Formulaire de connexion -->
+      <div class="auth-form-wrap">
         <form class="auth-form" method="post" th:action="@{/login}">
-            <h2 class="form-title">Connexion</h2>
-            <p class="form-sub">Heureux de vous revoir.</p>
+          <h2 class="form-title">Connexion</h2>
+          <p class="form-sub">Heureux de vous revoir.</p>
 
-            <!-- Message succès après inscription -->
-            <div class="field" th:if="${success}">
+          <!-- Message succès après inscription -->
+          <div class="field" th:if="${success}">
             <span
-                    style="color: var(--type-amelioration); font-size: 13px"
-                    th:text="${success}"
+              style="color: var(--type-amelioration); font-size: 13px"
+              th:text="${success}"
             ></span>
-            </div>
+          </div>
 
-            <div class="field">
-                <label for="pseudo">Pseudo</label>
-                <input
-                        autofocus
-                        id="pseudo"
-                        name="pseudo"
-                        th:value="${pseudo}"
-                        type="text"
-                />
-                <span class="err" th:if="${erreur}" th:text="${erreur}"></span>
-            </div>
+          <div class="field">
+            <label for="pseudo">Pseudo</label>
+            <input
+              autofocus
+              id="pseudo"
+              name="pseudo"
+              th:value="${pseudo}"
+              type="text"
+            />
+            <span class="err" th:if="${erreur}" th:text="${erreur}"></span>
+          </div>
 
-            <div class="field">
-                <label for="password">Mot de passe</label>
-                <input
-                        id="password"
-                        name="password"
-                        type="password"
-                />
-            </div>
+          <div class="field">
+            <label for="password">Mot de passe</label>
+            <input id="password" name="password" type="password" />
+          </div>
 
-            <button
-                    class="btn btn-primary btn-block"
-                    style="margin-top: 8px"
-                    type="submit"
-            >
-                Se connecter
-            </button>
+          <button
+            class="btn btn-primary btn-block"
+            style="margin-top: 8px"
+            type="submit"
+          >
+            Se connecter
+          </button>
 
-            <p class="switch">
-                Pas encore de compte ? <a th:href="@{/register}">S'inscrire</a>
-            </p>
+          <p class="switch">
+            Pas encore de compte ? <a th:href="@{/register}">S'inscrire</a>
+          </p>
         </form>
+      </div>
     </div>
-</div>
-</body>
+  </body>
 </html>
