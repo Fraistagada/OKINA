@@ -808,8 +808,6 @@ select {
   width: 100%;
   max-width: 760px;
   max-height: 90vh;
-  display: grid;
-  grid-template-columns: 1fr 240px;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   animation: popIn 0.18s ease-out;
@@ -1383,4 +1381,221 @@ select {
 
 .text-decoration-none {
   text-decoration: none;
+}
+
+/* =============================================
+   VUE TABLEAU KANBAN
+   ============================================= */
+
+.board-titlebar {
+  padding: 16px 24px 0;
+}
+.board-titlebar h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.board-columns {
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.kanban-col {
+  background: var(--bg-soft, #f4f5f7);
+  border-radius: 10px;
+  padding: 12px;
+  min-width: 280px;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.col-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.col-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.col-count {
+  margin-left: auto;
+  background: var(--bg-card, #fff);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #888);
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.task-card {
+  background: var(--bg-card, #fff);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    box-shadow 0.15s,
+    transform 0.1s;
+  display: flex;
+  gap: 10px;
+}
+
+.task-card:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.13);
+  transform: translateY(-1px);
+}
+
+.task-type-bar {
+  width: 4px;
+  flex-shrink: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.task-body {
+  padding: 10px 10px 10px 0;
+  flex: 1;
+}
+
+.task-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.task-type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted, #888);
+  background: var(--bg-soft, #f4f5f7);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* =============================================
+   MODALES
+   ============================================= */
+
+.modal-wide {
+  width: 760px;
+}
+
+.modal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.modal header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.modal .body {
+  padding: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 20px;
+}
+
+.task-detail-body {
+  display: flex;
+  gap: 24px;
+}
+
+.task-detail-left {
+  flex: 1;
+}
+.task-detail-right {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.task-detail-desc {
+  font-size: 14px;
+  color: var(--text-muted, #555);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.comment-item {
+  background: var(--bg-soft, #f4f5f7);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.attachment-item {
+  font-size: 12px;
+  color: var(--accent, #3b6ef5);
+  padding: 4px 0;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-list li {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  padding-left: 12px;
+  border-left: 2px solid var(--border, #e5e7eb);
+}
+
+.btn-danger {
+  background: #e0394a;
+  color: #fff;
+  border: none;
+}
+.btn-danger:hover {
+  background: #c42d3c;
 }
