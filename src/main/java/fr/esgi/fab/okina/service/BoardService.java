@@ -22,6 +22,10 @@ public class BoardService {
         return boardRepository.findByUserId(userId);
     }
 
+    public Board getBoardById(String boardId) throws SQLException {
+        return boardRepository.findById(boardId);
+    }
+
     public String createBoard(String name, String ownerId) throws SQLException {
         if (name == null || name.trim().isEmpty()) {
             return "Le nom du tableau est obligatoire.";
