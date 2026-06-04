@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="@{/css/styles.css}" />
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
   </head>
   <body>
     <div class="app-shell">
@@ -68,9 +68,6 @@
               Retrouvez tous les projets auxquels vous contribuez.
             </p>
           </div>
-          <button class="btn btn-primary" id="btnNewBoard">
-            + Nouveau tableau
-          </button>
         </header>
 
         <!-- Message succès -->
@@ -118,7 +115,7 @@
           </div>
 
           <!-- Carte "Ajouter" -->
-          <div class="board-card add-card" id="btnNewBoard2">
+          <div class="board-card add-card" id="btnNewBoard">
             <span>+ Nouveau tableau</span>
           </div>
         </div>
@@ -285,7 +282,6 @@
       }
 
       document.getElementById("btnNewBoard").onclick = openModal;
-      document.getElementById("btnNewBoard2").onclick = openModal;
       document.getElementById("btnCloseModal").onclick = closeModal;
       document.getElementById("btnCancelStep1").onclick = closeModal;
       document.getElementById("btnBackToName").onclick = function () {
