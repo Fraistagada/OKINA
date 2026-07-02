@@ -1,148 +1,155 @@
 package fr.esgi.fab.okina.service;
 
+import fr.esgi.fab.okina.models.Comment;
 import fr.esgi.fab.okina.models.Task;
+import fr.esgi.fab.okina.models.TaskHistory;
 import fr.esgi.fab.okina.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
+@DisplayName("TaskService - tâches, déplacements et commentaires")
 class TaskServiceTest {
 
+    @Mock
     private TaskRepository taskRepository;
+
     private TaskService taskService;
 
     @BeforeEach
     void setUp() {
-        taskRepository = Mockito.mock(TaskRepository.class);
         taskService = new TaskService(taskRepository);
     }
 
-    // ---- Tests création ----
+    @Nested
+    @DisplayName("createTask()")
+    class CreateTask {
 
-    @Test
-    void createTask_titreVide_retourneErreur() throws SQLException {
-        String erreur = taskService.createTask("board1", "", "desc", "bug", null);
-        assertNotNull(erreur);
-        assertTrue(erreur.contains("titre") || erreur.contains("Titre"));
+        @Test
+        @DisplayName("refuse un titre vide")
+        void titreVide() throws SQLException {
+            assertEquals("Le titre est obligatoire.",
+                    taskService.createTask("board-1", "  ", "desc", "standard", "user-1"));
+            verify(taskRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("refuse un type vide")
+        void typeVide() throws SQLException {
+            assertEquals("Le type est obligatoire.",
+                    taskService.createTask("board-1", "Titre", "desc", "  ", "user-1"));
+            verify(taskRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("crée une tâche placée dans la colonne 'todo' et enregistre l'historique")
+        void creationValide() throws SQLException {
+            String resultat = taskService.createTask(
+                    "board-1", "  Ma tâche  ", "une description", "bug", "user-1");
+
+            assertNull(resultat);
+
+            ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+            verify(taskRepository).save(taskCaptor.capture());
+            Task sauvegarde = taskCaptor.getValue();
+
+            assertEquals("board-1", sauvegarde.getBoardId());
+            assertEquals("Ma tâche", sauvegarde.getTitle()); // titre nettoyé
+            assertEquals("bug", sauvegarde.getTypeId());
+            assertEquals("todo", sauvegarde.getColumnId()); // toujours 'todo' à la création
+            assertEquals("user-1", sauvegarde.getAssigneeId());
+            assertNotNull(sauvegarde.getCreatedAt());
+
+            // Une entrée d'historique doit être créée
+            verify(taskRepository).saveHistory(any(TaskHistory.class));
+        }
+
+        @Test
+        @DisplayName("met assigneeId à null quand il est vide")
+        void assigneeVideDevientNull() throws SQLException {
+            taskService.createTask("board-1", "Titre", "desc", "standard", "");
+
+            ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
+            verify(taskRepository).save(captor.capture());
+            assertNull(captor.getValue().getAssigneeId());
+        }
+    }
+
+    @Nested
+    @DisplayName("moveTask()")
+    class MoveTask {
+
+        @Test
+        @DisplayName("refuse une colonne invalide")
+        void colonneInvalide() throws SQLException {
+            assertEquals("Colonne invalide.", taskService.moveTask("task-1", "archive"));
+            verify(taskRepository, never()).updateColumn(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("refuse si la tâche est introuvable")
+        void tacheIntrouvable() throws SQLException {
+            when(taskRepository.findById("task-1")).thenReturn(null);
+
+            assertEquals("Tâche introuvable.", taskService.moveTask("task-1", "doing"));
+            verify(taskRepository, never()).updateColumn(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("déplace la tâche et enregistre l'historique")
+        void deplacementValide() throws SQLException {
+            when(taskRepository.findById("task-1")).thenReturn(new Task());
+
+            assertNull(taskService.moveTask("task-1", "done"));
+
+            verify(taskRepository).updateColumn("task-1", "done");
+            verify(taskRepository).saveHistory(any(TaskHistory.class));
+        }
     }
 
     @Test
-    void createTask_titreNull_retourneErreur() throws SQLException {
-        String erreur = taskService.createTask("board1", null, "desc", "bug", null);
-        assertNotNull(erreur);
+    @DisplayName("deleteTask délègue la suppression au repository")
+    void deleteTask() throws SQLException {
+        taskService.deleteTask("task-1");
+        verify(taskRepository).delete("task-1");
     }
 
-    @Test
-    void createTask_typeNull_retourneErreur() throws SQLException {
-        String erreur = taskService.createTask("board1", "Ma tâche", "desc", null, null);
-        assertNotNull(erreur);
-        assertTrue(erreur.contains("type") || erreur.contains("Type"));
-    }
+    @Nested
+    @DisplayName("addComment()")
+    class AddComment {
 
-    @Test
-    void createTask_donneesValides_retourneNull() throws SQLException {
-        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
+        @Test
+        @DisplayName("refuse un commentaire vide")
+        void commentaireVide() throws SQLException {
+            assertEquals("Le commentaire est vide.",
+                    taskService.addComment("task-1", "user-1", "   "));
+            verify(taskRepository, never()).saveComment(any());
+        }
 
-        String erreur = taskService.createTask("board1", "Ma tâche", "desc", "bug", "user1");
-        assertNull(erreur);
+        @Test
+        @DisplayName("enregistre un commentaire valide avec contenu nettoyé")
+        void commentaireValide() throws SQLException {
+            assertNull(taskService.addComment("task-1", "user-1", "  Bien joué !  "));
 
-        verify(taskRepository, times(1)).save(any(Task.class));
-        verify(taskRepository, times(1)).saveHistory(any());
-    }
+            ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
+            verify(taskRepository).saveComment(captor.capture());
+            Comment c = captor.getValue();
 
-    @Test
-    void createTask_sanAssignee_retourneNull() throws SQLException {
-        when(taskRepository.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
-
-        String erreur = taskService.createTask("board1", "Ma tâche", null, "standard", "");
-        assertNull(erreur);
-    }
-
-    // ---- Tests déplacement ----
-
-    @Test
-    void moveTask_colonneInvalide_retourneErreur() throws SQLException {
-        String erreur = taskService.moveTask("task1", "invalid_col");
-        assertNotNull(erreur);
-        assertTrue(erreur.contains("invalide") || erreur.contains("Colonne"));
-    }
-
-    @Test
-    void moveTask_tacheIntrouvable_retourneErreur() throws SQLException {
-        when(taskRepository.findById("task_inexistant")).thenReturn(null);
-
-        String erreur = taskService.moveTask("task_inexistant", "doing");
-        assertNotNull(erreur);
-        assertTrue(erreur.contains("introuvable") || erreur.contains("Tâche"));
-    }
-
-    @Test
-    void moveTask_versDoing_retourneNull() throws SQLException {
-        Task task = buildTask("task1", "todo");
-        when(taskRepository.findById("task1")).thenReturn(task);
-
-        String erreur = taskService.moveTask("task1", "doing");
-        assertNull(erreur);
-
-        verify(taskRepository, times(1)).updateColumn("task1", "doing");
-        verify(taskRepository, times(1)).saveHistory(any());
-    }
-
-    @Test
-    void moveTask_versDone_retourneNull() throws SQLException {
-        Task task = buildTask("task1", "doing");
-        when(taskRepository.findById("task1")).thenReturn(task);
-
-        String erreur = taskService.moveTask("task1", "done");
-        assertNull(erreur);
-        verify(taskRepository, times(1)).updateColumn("task1", "done");
-    }
-
-    // ---- Tests commentaire ----
-
-    @Test
-    void addComment_contenuVide_retourneErreur() throws SQLException {
-        String erreur = taskService.addComment("task1", "user1", "");
-        assertNotNull(erreur);
-    }
-
-    @Test
-    void addComment_contenuNull_retourneErreur() throws SQLException {
-        String erreur = taskService.addComment("task1", "user1", null);
-        assertNotNull(erreur);
-    }
-
-    @Test
-    void addComment_contenuValide_retourneNull() throws SQLException {
-        String erreur = taskService.addComment("task1", "user1", "Super commentaire");
-        assertNull(erreur);
-        verify(taskRepository, times(1)).saveComment(any());
-    }
-
-    // ---- Tests suppression ----
-
-    @Test
-    void deleteTask_appelleRepositoryDelete() throws SQLException {
-        taskService.deleteTask("task1");
-        verify(taskRepository, times(1)).delete("task1");
-    }
-
-    // ---- Utilitaire ----
-
-    private Task buildTask(String id, String columnId) {
-        Task t = new Task();
-        t.setId(id);
-        t.setBoardId("board1");
-        t.setTitle("Tâche test");
-        t.setTypeId("standard");
-        t.setColumnId(columnId);
-        t.setCreatedAt(LocalDateTime.now());
-        return t;
+            assertEquals("task-1", c.getTaskId());
+            assertEquals("user-1", c.getAuthorId());
+            assertEquals("Bien joué !", c.getContent());
+            assertNotNull(c.getCreatedAt());
+        }
     }
 }
