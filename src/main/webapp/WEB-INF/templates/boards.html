@@ -239,15 +239,14 @@
         <div class="footer" id="footerPayment" style="display: none">
           <button class="btn btn-ghost" id="btnBackToName">← Retour</button>
 
-          <!-- Formulaire qui POST vers /boards -->
+          <!-- Formulaire qui POST vers /checkout (démarre la session Stripe) -->
           <form
             method="post"
-            th:action="@{/boards}"
+            th:action="@{/checkout}"
             id="formCreateBoard"
             style="display: inline"
           >
             <input type="hidden" name="name" id="hiddenBoardName" />
-            <input type="hidden" name="stripePaid" value="true" />
             <button type="submit" class="btn btn-primary">
               Payer et créer
             </button>
