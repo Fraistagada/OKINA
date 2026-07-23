@@ -1,0 +1,335 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OKINA – Statistiques</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+    <script>
+      // Applique le thème sauvegardé avant le rendu (évite le flash)
+      (function () {
+        const saved = localStorage.getItem("okina-theme");
+        if (
+          saved === "dark" ||
+          (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Sidebar partagée -->
+      <div th:replace="~{fragments/sidebar :: sidebar(null, 'stats')}"></div>
+
+      <div class="app-main">
+        <!-- Header -->
+        <header class="app-header">
+          <button class="icon-btn btn-burger" id="btnBurger" aria-label="Menu">
+            <svg
+              viewBox="0 0 24 24"
+              width="19"
+              height="19"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <div class="spacer"></div>
+
+          <!-- Notifications -->
+          <button class="icon-btn" id="btnNotif" title="Notifications">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span
+              class="dot"
+              th:if="${unreadCount != null and unreadCount > 0}"
+            ></span>
+          </button>
+        </header>
+
+        <!-- Panneau de notifications -->
+        <div class="notif-panel" id="notifPanel" style="display: none">
+          <header><span>Notifications</span></header>
+          <div class="notif-list">
+            <div
+              class="notif-item"
+              th:each="n : ${notifications}"
+              th:classappend="${!n.read} ? ' unread'"
+              th:data-board="${n.boardId}"
+              th:data-task="${n.taskId}"
+            >
+              <span class="dot" th:if="${!n.read}"></span>
+              <div class="body">
+                <div class="text" th:text="${n.text}">…</div>
+                <div class="when" th:text="${n.when}">…</div>
+              </div>
+            </div>
+            <div
+              class="notif-empty"
+              th:if="${notifications == null or #lists.isEmpty(notifications)}"
+            >
+              Aucune notification pour l'instant.
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenu -->
+        <main class="stats-page">
+          <header>
+            <div>
+              <h1>Statistiques</h1>
+              <p class="lead">Vue d'ensemble de l'activité de vos tableaux.</p>
+            </div>
+          </header>
+
+          <!-- Tuiles de synthèse -->
+          <div class="stat-tiles">
+            <div class="stat-tile">
+              <span class="label">Tableaux</span>
+              <span class="value" th:text="${totalBoards}">0</span>
+            </div>
+            <div class="stat-tile">
+              <span class="label">Tâches au total</span>
+              <span class="value" th:text="${totalTasks}">0</span>
+            </div>
+            <div class="stat-tile">
+              <span class="label">Tâches terminées</span>
+              <span class="value" th:text="${totalDone}">0</span>
+            </div>
+            <div class="stat-tile">
+              <span class="label">Avancement global</span>
+              <span class="value" th:text="${completion} + ' %'">0 %</span>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <!-- Répartition par type -->
+            <section class="stat-card">
+              <h3>Répartition par type</h3>
+              <div class="donut-wrap">
+                <div class="donut" id="donutType"></div>
+                <ul class="chart-legend" id="legendType"></ul>
+              </div>
+            </section>
+
+            <!-- Répartition par colonne -->
+            <section class="stat-card">
+              <h3>Répartition par colonne</h3>
+              <div class="stacked-bar" id="stackedCols"></div>
+              <ul class="chart-legend" id="legendCols"></ul>
+            </section>
+
+            <!-- Avancement par tableau -->
+            <section class="stat-card wide">
+              <h3>Avancement par tableau</h3>
+              <div class="board-bars" id="boardBars"></div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Données injectées -->
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      const STATS = /*[[${statsData}]]*/ { types: {}, columns: {}, boards: [] };
+      /*]]>*/
+    </script>
+
+    <script>
+      // ---- Construction des graphiques (sans librairie) ----
+      const TYPE_META = [
+        ["standard", "Standard", "#64748b"],
+        ["bug", "Bug", "#ef4444"],
+        ["spike", "Spike", "#a855f7"],
+        ["amelioration", "Amélioration", "#10b981"],
+      ];
+      const COL_META = [
+        ["todo", "À faire", "#94a3b8"],
+        ["doing", "En cours", "#3b82f6"],
+        ["done", "Terminé", "#10b981"],
+      ];
+
+      function buildLegend(el, meta, counts) {
+        el.innerHTML = "";
+        meta.forEach(([key, label, color]) => {
+          const li = document.createElement("li");
+          li.innerHTML =
+            '<span class="swatch" style="background:' +
+            color +
+            '"></span>' +
+            label +
+            ' <b>' +
+            (counts[key] || 0) +
+            "</b>";
+          el.appendChild(li);
+        });
+      }
+
+      // Donut par type (conic-gradient)
+      (function () {
+        const counts = STATS.types || {};
+        const total = TYPE_META.reduce((s, [k]) => s + (counts[k] || 0), 0);
+        const donut = document.getElementById("donutType");
+        if (total === 0) {
+          donut.style.background = "var(--bg-soft)";
+          donut.classList.add("empty");
+          donut.setAttribute("data-label", "Aucune tâche");
+        } else {
+          let acc = 0;
+          const stops = [];
+          TYPE_META.forEach(([key, , color]) => {
+            const part = ((counts[key] || 0) / total) * 360;
+            if (part > 0) {
+              stops.push(color + " " + acc + "deg " + (acc + part) + "deg");
+              acc += part;
+            }
+          });
+          donut.style.background = "conic-gradient(" + stops.join(",") + ")";
+          donut.setAttribute("data-label", total + " tâche(s)");
+        }
+        buildLegend(document.getElementById("legendType"), TYPE_META, counts);
+      })();
+
+      // Barre empilée par colonne
+      (function () {
+        const counts = STATS.columns || {};
+        const total = COL_META.reduce((s, [k]) => s + (counts[k] || 0), 0);
+        const bar = document.getElementById("stackedCols");
+        bar.innerHTML = "";
+        if (total === 0) {
+          bar.innerHTML =
+            '<span class="seg" style="width:100%;background:var(--bg-soft)"></span>';
+        } else {
+          COL_META.forEach(([key, label, color]) => {
+            const n = counts[key] || 0;
+            if (n === 0) return;
+            const seg = document.createElement("span");
+            seg.className = "seg";
+            seg.style.width = (n / total) * 100 + "%";
+            seg.style.background = color;
+            seg.title = label + " : " + n;
+            bar.appendChild(seg);
+          });
+        }
+        buildLegend(document.getElementById("legendCols"), COL_META, counts);
+      })();
+
+      // Barres d'avancement par tableau
+      (function () {
+        const wrap = document.getElementById("boardBars");
+        wrap.innerHTML = "";
+        const boards = STATS.boards || [];
+        if (!boards.length) {
+          wrap.innerHTML =
+            '<p class="chart-empty">Aucun tableau pour l\'instant.</p>';
+          return;
+        }
+        boards.forEach((b) => {
+          const pct = b.total > 0 ? Math.round((b.done / b.total) * 100) : 0;
+          const row = document.createElement("div");
+          row.className = "board-bar-row";
+          row.innerHTML =
+            '<span class="name"></span>' +
+            '<div class="track"><span class="fill" style="width:' +
+            pct +
+            '%"></span></div>' +
+            '<span class="pct">' +
+            b.done +
+            "/" +
+            b.total +
+            " · " +
+            pct +
+            "%</span>";
+          row.querySelector(".name").textContent = b.name;
+          wrap.appendChild(row);
+        });
+      })();
+
+      // ---- Panneau de notifications ----
+      const btnNotif = document.getElementById("btnNotif");
+      const notifPanel = document.getElementById("notifPanel");
+      if (btnNotif && notifPanel) {
+        btnNotif.onclick = (e) => {
+          e.stopPropagation();
+          const isOpen = notifPanel.style.display !== "none";
+          notifPanel.style.display = isOpen ? "none" : "flex";
+          if (!isOpen) {
+            fetch("notifications/read", { method: "post" });
+            const dot = btnNotif.querySelector(".dot");
+            if (dot) dot.remove();
+          }
+        };
+        document.addEventListener("click", (e) => {
+          if (!notifPanel.contains(e.target) && !btnNotif.contains(e.target)) {
+            notifPanel.style.display = "none";
+          }
+        });
+        notifPanel.querySelectorAll(".notif-item").forEach((item) => {
+          item.onclick = () => {
+            const b = item.dataset.board;
+            if (!b) return;
+            const t = item.dataset.task;
+            window.location.href = "board?id=" + b + (t ? "&task=" + t : "");
+          };
+        });
+      }
+
+      // ---- Sidebar mobile (burger) ----
+      const btnBurger = document.getElementById("btnBurger");
+      const sidebarEl = document.getElementById("sidebar");
+      const sbBackdrop = document.getElementById("sbBackdrop");
+      if (btnBurger && sidebarEl && sbBackdrop) {
+        btnBurger.onclick = () => {
+          sidebarEl.classList.add("open");
+          sbBackdrop.classList.add("show");
+        };
+        sbBackdrop.onclick = () => {
+          sidebarEl.classList.remove("open");
+          sbBackdrop.classList.remove("show");
+        };
+      }
+
+      // ---- Thème ----
+      document.getElementById("themeToggle").onclick = function () {
+        const root = document.documentElement;
+        if (root.getAttribute("data-theme") === "dark") {
+          root.removeAttribute("data-theme");
+          localStorage.setItem("okina-theme", "light");
+        } else {
+          root.setAttribute("data-theme", "dark");
+          localStorage.setItem("okina-theme", "dark");
+        }
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,179 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+  <body>
+    <!-- Sidebar partagée par toutes les pages de l'app.
+         Paramètres : currentBoardId (id du tableau ouvert, sinon null)
+                      page ('boards' | 'board' | 'stats' | 'profile') -->
+    <th:block th:fragment="sidebar(currentBoardId, page)">
+      <aside class="sidebar" id="sidebar">
+        <!-- Marque -->
+        <a class="sb-brand" th:href="@{/boards}">
+          <div class="mark">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <span>OKINA Kanban</span>
+        </a>
+
+        <!-- Navigation -->
+        <nav class="sb-nav">
+          <a
+            class="sb-item"
+            th:href="@{/boards}"
+            th:classappend="${page == 'boards'} ? ' active'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Mes tableaux
+          </a>
+          <a
+            class="sb-item"
+            th:href="@{/stats}"
+            th:classappend="${page == 'stats'} ? ' active'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Statistiques
+          </a>
+          <a
+            class="sb-item"
+            th:href="@{/profile}"
+            th:classappend="${page == 'profile'} ? ' active'"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            Profil
+          </a>
+        </nav>
+
+        <!-- Liste des tableaux -->
+        <div class="sb-label">Tableaux</div>
+        <div class="sb-boards">
+          <a
+            class="sb-item sb-board"
+            th:each="b : ${myBoards}"
+            th:href="@{/board(id=${b.id})}"
+            th:classappend="${b.id == currentBoardId} ? ' active'"
+            th:title="${b.name}"
+          >
+            <span
+              class="sb-board-icon"
+              th:text="${#strings.substring(b.name, 0, 1).toUpperCase()}"
+              >M</span
+            >
+            <span class="sb-board-name" th:text="${b.name}">Tableau</span>
+          </a>
+          <a class="sb-item" th:href="@{/boards(new=1)}">
+            <span class="sb-board-icon plus">+</span>
+            <span>Nouveau tableau</span>
+          </a>
+        </div>
+
+        <!-- Pied : utilisateur + thème -->
+        <div class="sb-footer">
+          <div
+            class="avatar"
+            th:style="'background:' + ${user.color}"
+            th:text="${#strings.substring(user.pseudo, 0, 1).toUpperCase()}"
+          >
+            A
+          </div>
+          <div class="sb-user-info">
+            <span class="pseudo" th:text="${user.pseudo}">pseudo</span>
+            <a th:href="@{/logout}">Se déconnecter</a>
+          </div>
+          <button
+            class="icon-btn theme-toggle-mini"
+            id="themeToggle"
+            title="Changer de thème"
+            aria-label="Changer de thème"
+          >
+            <svg
+              class="moon"
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <svg
+              class="sun"
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Voile mobile -->
+      <div class="sb-backdrop" id="sbBackdrop"></div>
+    </th:block>
+  </body>
+</html>
