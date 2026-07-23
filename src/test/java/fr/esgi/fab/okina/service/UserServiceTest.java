@@ -164,7 +164,7 @@ class UserServiceTest {
 
         private User utilisateurAvecMotDePasse(String motDePasseEnClair) {
             String hash = BCrypt.withDefaults().hashToString(12, motDePasseEnClair.toCharArray());
-            return new User("id-1", "alice", "alice@mail.com", hash, LocalDateTime.now());
+            return new User("id-1", "alice", "alice@mail.com", hash, null, LocalDateTime.now());
         }
     }
 }

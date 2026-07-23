@@ -15,49 +15,93 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" th:href="@{/css/styles.css}" />
+    <script>
+      // Applique le thème sauvegardé avant le rendu (évite le flash)
+      (function () {
+        const saved = localStorage.getItem("okina-theme");
+        if (
+          saved === "dark" ||
+          (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div class="app-shell">
+      <!-- Sidebar partagée -->
+      <div th:replace="~{fragments/sidebar :: sidebar(null, 'boards')}"></div>
+
+      <div class="app-main">
       <!-- Header -->
       <header class="app-header">
-        <div class="brand">
-          <div class="mark">
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-          </div>
-          <span>OKINA Kanban</span>
-        </div>
+        <button class="icon-btn btn-burger" id="btnBurger" aria-label="Menu">
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
         <div class="spacer"></div>
 
-        <!-- Avatar + pseudo -->
-        <button class="user-chip">
-          <div
-            class="avatar"
-            style="background: var(--accent)"
-            th:text="${#strings.substring(user.pseudo, 0, 1).toUpperCase()}"
+        <!-- Notifications -->
+        <button class="icon-btn" id="btnNotif" title="Notifications">
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            A
-          </div>
-          <span th:text="${user.pseudo}">pseudo</span>
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span
+            class="dot"
+            th:if="${unreadCount != null and unreadCount > 0}"
+          ></span>
         </button>
 
-        <!-- Déconnexion -->
-        <a
-          th:href="@{/logout}"
-          class="btn btn-ghost btn-sm text-decoration-none"
-          >Se déconnecter</a
-        >
       </header>
+
+      <!-- Panneau de notifications -->
+      <div class="notif-panel" id="notifPanel" style="display: none">
+        <header><span>Notifications</span></header>
+        <div class="notif-list">
+          <div
+            class="notif-item"
+            th:each="n : ${notifications}"
+            th:classappend="${!n.read} ? ' unread'"
+            th:data-board="${n.boardId}"
+            th:data-task="${n.taskId}"
+          >
+            <span class="dot" th:if="${!n.read}"></span>
+            <div class="body">
+              <div class="text" th:text="${n.text}">…</div>
+              <div class="when" th:text="${n.when}">…</div>
+            </div>
+          </div>
+          <div
+            class="notif-empty"
+            th:if="${notifications == null or #lists.isEmpty(notifications)}"
+          >
+            Aucune notification pour l'instant.
+          </div>
+        </div>
+      </div>
 
       <!-- Contenu -->
       <main class="boards-page">
@@ -68,6 +112,22 @@
               Retrouvez tous les projets auxquels vous contribuez.
             </p>
           </div>
+          <button class="btn btn-primary" id="btnNewBoard">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nouveau tableau
+          </button>
         </header>
 
         <!-- Message succès -->
@@ -86,40 +146,99 @@
           th:text="${erreur}"
         ></div>
 
-        <!-- Grille des tableaux -->
-        <div class="boards-grid">
+        <!-- Liste des tableaux (façon Jira) -->
+        <div class="boards-list" th:if="${!#lists.isEmpty(boards)}">
           <div
-            class="board-card"
+            class="board-row"
             th:each="board : ${boards}"
+            th:with="s=${stats.get(board.id)}"
             th:data-id="${board.id}"
             onclick="window.location.href = 'board?id=' + this.dataset.id"
           >
-            <div class="stripe"></div>
-            <h3 th:text="${board.name}">Mon tableau</h3>
-            <div class="meta">
-              <div class="members">
-                <div
-                  th:each="member : ${board.members}"
-                  class="avatar sm"
-                  style="background: var(--accent)"
-                  th:text="${#strings.substring(member.pseudo, 0, 1).toUpperCase()}"
-                  th:title="${member.pseudo}"
-                >
-                  A
-                </div>
+            <!-- Icône -->
+            <div
+              class="row-icon"
+              th:text="${#strings.substring(board.name, 0, 1).toUpperCase()}"
+            >
+              M
+            </div>
+
+            <!-- Nom + total -->
+            <div class="row-main">
+              <h3 th:text="${board.name}">Mon tableau</h3>
+              <div class="row-sub" th:text="${s[3]} + ' tâche(s)'">
+                0 tâche(s)
               </div>
-              <span th:text="${#lists.size(board.members)} + ' membre(s)'"
-                >1 membre(s)</span
+            </div>
+
+            <!-- Compteurs par colonne -->
+            <div class="row-stats">
+              <span class="stat todo">
+                <span class="sdot"></span><b th:text="${s[0]}">0</b> À faire
+              </span>
+              <span class="stat doing">
+                <span class="sdot"></span><b th:text="${s[1]}">0</b> En cours
+              </span>
+              <span class="stat done">
+                <span class="sdot"></span><b th:text="${s[2]}">0</b> Terminé
+              </span>
+            </div>
+
+            <!-- Progression (terminé / total) -->
+            <div class="row-progress">
+              <span
+                th:style="|width:${s[3] > 0 ? s[2] * 100 / s[3] : 0}%|"
+              ></span>
+            </div>
+
+            <!-- Membres -->
+            <div class="row-members">
+              <div
+                th:each="member,it : ${board.members}"
+                th:if="${it.index < 3}"
+                class="avatar sm"
+                th:style="'background:' + ${member.color}"
+                th:text="${#strings.substring(member.pseudo, 0, 1).toUpperCase()}"
+                th:title="${member.pseudo}"
+              >
+                A
+              </div>
+              <span
+                class="more"
+                th:if="${#lists.size(board.members) > 3}"
+                th:text="'+' + (${#lists.size(board.members)} - 3)"
+                >+2</span
               >
             </div>
-          </div>
 
-          <!-- Carte "Ajouter" -->
-          <div class="board-card add-card" id="btnNewBoard">
-            <span>+ Nouveau tableau</span>
+            <!-- Chevron -->
+            <span class="row-go">
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </span>
           </div>
         </div>
+
+        <!-- État vide -->
+        <div class="empty-board" th:if="${#lists.isEmpty(boards)}">
+          <div class="glyph">▦</div>
+          <p>Aucun tableau pour l'instant.</p>
+          <button class="btn btn-primary" id="btnNewBoardEmpty" style="margin-top: 12px">
+            + Créer mon premier tableau
+          </button>
+        </div>
       </main>
+      </div>
     </div>
 
     <!-- =====================================================
@@ -172,11 +291,11 @@
           </div>
         </div>
 
-        <!-- Étape 2 : paiement Stripe sandbox -->
+        <!-- Étape 2 : paiement Stripe (mode setup, 0 €) -->
         <div class="body" id="stepPayment" style="display: none">
           <div class="price-row">
             <span>Création d'un tableau</span>
-            <span class="amount">9,99 €</span>
+            <span class="amount">0,00 €</span>
           </div>
           <span class="sandbox-tag">
             <svg
@@ -191,48 +310,18 @@
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            Mode bac à sable – aucun vrai paiement
+            Mode test – aucun débit ne sera effectué
           </span>
 
-          <div style="margin-top: 18px">
-            <div class="field">
-              <label>Numéro de carte</label>
-              <input
-                type="text"
-                value="4242 4242 4242 4242"
-                readonly
-                style="
-                  font-family: var(--font-mono);
-                  background: var(--bg-soft);
-                "
-              />
-            </div>
-            <div style="display: flex; gap: 12px">
-              <div class="field" style="flex: 1">
-                <label>Expiration</label>
-                <input
-                  type="text"
-                  value="12/30"
-                  readonly
-                  style="
-                    font-family: var(--font-mono);
-                    background: var(--bg-soft);
-                  "
-                />
-              </div>
-              <div class="field" style="flex: 1">
-                <label>CVC</label>
-                <input
-                  type="text"
-                  value="123"
-                  readonly
-                  style="
-                    font-family: var(--font-mono);
-                    background: var(--bg-soft);
-                  "
-                />
-              </div>
-            </div>
+          <p class="stripe-explain">
+            En validant, vous serez redirigé vers la page sécurisée de
+            <b>Stripe</b> pour vérifier votre carte bancaire, puis ramené ici.
+          </p>
+
+          <div class="stripe-testcard">
+            <span class="label">Carte de test à utiliser</span>
+            <span class="mono">4242 4242 4242 4242</span>
+            <span class="sub">Expiration : n'importe quelle date future · CVC : 123</span>
           </div>
         </div>
 
@@ -248,7 +337,7 @@
           >
             <input type="hidden" name="name" id="hiddenBoardName" />
             <button type="submit" class="btn btn-primary">
-              Payer et créer
+              Valider ma carte et créer
             </button>
           </form>
         </div>
@@ -281,6 +370,8 @@
       }
 
       document.getElementById("btnNewBoard").onclick = openModal;
+      const btnEmpty = document.getElementById("btnNewBoardEmpty");
+      if (btnEmpty) btnEmpty.onclick = openModal;
       document.getElementById("btnCloseModal").onclick = closeModal;
       document.getElementById("btnCancelStep1").onclick = closeModal;
       document.getElementById("btnBackToName").onclick = function () {
@@ -305,6 +396,68 @@
       // Ré-ouvrir la modale si erreur serveur
       const showModal = /*[[${showModal}]]*/ false;
       if (showModal) openModal();
+
+      // ---- Panneau de notifications ----
+      const btnNotif = document.getElementById("btnNotif");
+      const notifPanel = document.getElementById("notifPanel");
+      if (btnNotif && notifPanel) {
+        btnNotif.onclick = (e) => {
+          e.stopPropagation();
+          const isOpen = notifPanel.style.display !== "none";
+          notifPanel.style.display = isOpen ? "none" : "flex";
+          if (!isOpen) {
+            // Marque tout comme lu côté serveur, enlève la pastille
+            fetch("notifications/read", { method: "post" });
+            const dot = btnNotif.querySelector(".dot");
+            if (dot) dot.remove();
+          }
+        };
+        document.addEventListener("click", (e) => {
+          if (!notifPanel.contains(e.target) && !btnNotif.contains(e.target)) {
+            notifPanel.style.display = "none";
+          }
+        });
+        notifPanel.querySelectorAll(".notif-item").forEach((item) => {
+          item.onclick = () => {
+            const b = item.dataset.board;
+            if (!b) return;
+            const t = item.dataset.task;
+            window.location.href = "board?id=" + b + (t ? "&task=" + t : "");
+          };
+        });
+      }
+
+      // ---- Sidebar mobile (burger) ----
+      const btnBurger = document.getElementById("btnBurger");
+      const sidebar = document.getElementById("sidebar");
+      const sbBackdrop = document.getElementById("sbBackdrop");
+      if (btnBurger && sidebar && sbBackdrop) {
+        btnBurger.onclick = () => {
+          sidebar.classList.add("open");
+          sbBackdrop.classList.add("show");
+        };
+        sbBackdrop.onclick = () => {
+          sidebar.classList.remove("open");
+          sbBackdrop.classList.remove("show");
+        };
+      }
+
+      // Lien "Nouveau tableau" de la sidebar : ouvre la modale
+      if (new URLSearchParams(window.location.search).get("new")) {
+        openModal();
+      }
+    </script>
+    <script>
+      document.getElementById("themeToggle").onclick = function () {
+        const root = document.documentElement;
+        if (root.getAttribute("data-theme") === "dark") {
+          root.removeAttribute("data-theme");
+          localStorage.setItem("okina-theme", "light");
+        } else {
+          root.setAttribute("data-theme", "dark");
+          localStorage.setItem("okina-theme", "dark");
+        }
+      };
     </script>
   </body>
 </html>

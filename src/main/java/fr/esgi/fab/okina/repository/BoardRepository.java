@@ -68,6 +68,55 @@ public class BoardRepository {
         return null;
     }
 
+    public void rename(String boardId, String name) throws SQLException {
+        String sql = "UPDATE board SET name = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            ps.setString(2, boardId);
+            ps.executeUpdate();
+        }
+    }
+
+    // Supprime le tableau et tout ce qui s'y rattache (tâches, commentaires, etc.)
+    public void delete(String boardId) throws SQLException {
+        String[] statements = {
+                "DELETE FROM comment WHERE task_id IN (SELECT id FROM task WHERE board_id = ?)",
+                "DELETE FROM attachment WHERE task_id IN (SELECT id FROM task WHERE board_id = ?)",
+                "DELETE FROM task_history WHERE task_id IN (SELECT id FROM task WHERE board_id = ?)",
+                "DELETE FROM task WHERE board_id = ?",
+                "DELETE FROM board_member WHERE board_id = ?",
+                "DELETE FROM notification WHERE board_id = ?",
+                "DELETE FROM board WHERE id = ?"
+        };
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            for (String sql : statements) {
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, boardId);
+                    ps.executeUpdate();
+                }
+            }
+        }
+    }
+
+    // Retire un membre ; ses tâches assignées sur ce tableau redeviennent non assignées
+    public void removeMember(String boardId, String userId) throws SQLException {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE task SET assignee_id = NULL WHERE board_id = ? AND assignee_id = ?")) {
+                ps.setString(1, boardId);
+                ps.setString(2, userId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "DELETE FROM board_member WHERE board_id = ? AND user_id = ?")) {
+                ps.setString(1, boardId);
+                ps.setString(2, userId);
+                ps.executeUpdate();
+            }
+        }
+    }
+
     public void addMember(String boardId, String userId) throws SQLException {
         String sql = "MERGE INTO board_member (board_id, user_id) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -106,6 +155,7 @@ public class BoardRepository {
                 u.setId(rs.getString("id"));
                 u.setPseudo(rs.getString("pseudo"));
                 u.setEmail(rs.getString("email"));
+                u.setAvatarColor(rs.getString("avatar_color"));
                 u.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
                 members.add(u);
             }

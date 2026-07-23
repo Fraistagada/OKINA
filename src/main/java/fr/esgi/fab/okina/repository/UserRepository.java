@@ -26,6 +26,50 @@ public class UserRepository {
         return user;
     }
 
+    public Optional<User> findById(String id) throws SQLException {
+        String sql = "SELECT * FROM app_user WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return Optional.of(mapRow(rs));
+            }
+        }
+        return Optional.empty();
+    }
+
+    public void updateProfile(String id, String pseudo, String email) throws SQLException {
+        String sql = "UPDATE app_user SET pseudo = ?, email = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, pseudo);
+            ps.setString(2, email);
+            ps.setString(3, id);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updatePassword(String id, String hash) throws SQLException {
+        String sql = "UPDATE app_user SET password = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, hash);
+            ps.setString(2, id);
+            ps.executeUpdate();
+        }
+    }
+
+    public void updateAvatarColor(String id, String color) throws SQLException {
+        String sql = "UPDATE app_user SET avatar_color = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, color);
+            ps.setString(2, id);
+            ps.executeUpdate();
+        }
+    }
+
     public Optional<User> findByPseudo(String pseudo) throws SQLException {
         String sql = "SELECT * FROM app_user WHERE pseudo = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -67,6 +111,7 @@ public class UserRepository {
         u.setPseudo(rs.getString("pseudo"));
         u.setEmail(rs.getString("email"));
         u.setHash(rs.getString("password"));
+        u.setAvatarColor(rs.getString("avatar_color"));
         u.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         return u;
     }

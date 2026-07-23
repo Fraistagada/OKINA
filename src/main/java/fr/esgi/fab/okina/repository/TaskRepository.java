@@ -63,6 +63,20 @@ public class TaskRepository {
         return null;
     }
 
+    // Met à jour les champs éditables d'une tâche
+    public void update(Task task) throws SQLException {
+        String sql = "UPDATE task SET title = ?, description = ?, type_id = ?, assignee_id = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, task.getTitle());
+            ps.setString(2, task.getDescription());
+            ps.setString(3, task.getTypeId());
+            ps.setString(4, task.getAssigneeId());
+            ps.setString(5, task.getId());
+            ps.executeUpdate();
+        }
+    }
+
     public void updateColumn(String taskId, String columnId) throws SQLException {
         String sql = "UPDATE task SET column_id = ? WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -131,9 +145,10 @@ public class TaskRepository {
 
     // --- Pièces jointes ---
 
-    public Attachment saveAttachment(Attachment attachment) throws SQLException {
+    // Enregistre la pièce jointe AVEC son contenu binaire
+    public Attachment saveAttachment(Attachment attachment, java.io.InputStream data) throws SQLException {
         if (attachment.getId() == null) attachment.setId(UUID.randomUUID().toString());
-        String sql = "INSERT INTO attachment (id, task_id, filename, file_size, created_at) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO attachment (id, task_id, filename, file_size, created_at, data) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, attachment.getId());
@@ -141,13 +156,56 @@ public class TaskRepository {
             ps.setString(3, attachment.getFilename());
             ps.setLong(4, attachment.getFileSize());
             ps.setTimestamp(5, Timestamp.valueOf(attachment.getCreatedAt()));
+            ps.setBinaryStream(6, data);
             ps.executeUpdate();
         }
         return attachment;
     }
 
+    // Renvoie la pièce jointe uniquement si l'utilisateur est membre du tableau
+    public Attachment findAttachmentIfMember(String attachmentId, String userId) throws SQLException {
+        String sql = """
+                SELECT a.id, a.task_id, a.filename, a.file_size, a.created_at
+                FROM attachment a
+                JOIN task t ON a.task_id = t.id
+                JOIN board_member bm ON t.board_id = bm.board_id
+                WHERE a.id = ? AND bm.user_id = ?
+                """;
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, attachmentId);
+            ps.setString(2, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Attachment a = new Attachment();
+                a.setId(rs.getString("id"));
+                a.setTaskId(rs.getString("task_id"));
+                a.setFilename(rs.getString("filename"));
+                a.setFileSize(rs.getLong("file_size"));
+                a.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                return a;
+            }
+        }
+        return null;
+    }
+
+    // Contenu binaire d'une pièce jointe (null si absent)
+    public byte[] findAttachmentData(String attachmentId) throws SQLException {
+        String sql = "SELECT data FROM attachment WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, attachmentId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getBytes("data");
+            }
+        }
+        return null;
+    }
+
     public List<Attachment> findAttachments(String taskId) throws SQLException {
-        String sql = "SELECT * FROM attachment WHERE task_id = ? ORDER BY created_at ASC";
+        // On ne sélectionne pas la colonne "data" (BLOB) : inutile pour l'affichage
+        String sql = "SELECT id, task_id, filename, file_size, created_at FROM attachment WHERE task_id = ? ORDER BY created_at ASC";
         List<Attachment> list = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

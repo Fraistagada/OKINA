@@ -14,5 +14,11 @@ public class User {
     private String pseudo;
     private String email;
     private String hash;
+    private String avatarColor;
     private LocalDateTime createdAt;
+
+    /** Couleur d'avatar affichable, avec repli sur la couleur d'accent. */
+    public String getColor() {
+        return avatarColor == null || avatarColor.isBlank() ? "var(--accent)" : avatarColor;
+    }
 }

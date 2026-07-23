@@ -20,7 +20,14 @@ public class TaskService {
     }
 
     public List<Task> getTasksForBoard(String boardId) throws SQLException {
-        return taskRepository.findByBoardId(boardId);
+        List<Task> tasks = taskRepository.findByBoardId(boardId);
+        // Charge le détail de chaque tâche (badges sur les cartes + modale détail)
+        for (Task task : tasks) {
+            task.setComments(taskRepository.findComments(task.getId()));
+            task.setAttachments(taskRepository.findAttachments(task.getId()));
+            task.setHistory(taskRepository.findHistory(task.getId()));
+        }
+        return tasks;
     }
 
     public Task getTaskById(String taskId) throws SQLException {
@@ -48,6 +55,42 @@ public class TaskService {
         h.setCreatedAt(LocalDateTime.now());
         taskRepository.saveHistory(h);
 
+        return null;
+    }
+
+    public String updateTask(String taskId, String title, String description,
+                             String typeId, String assigneeId) throws SQLException {
+        if (title == null || title.trim().isEmpty()) return "Le titre est obligatoire.";
+        if (typeId == null || typeId.trim().isEmpty()) return "Le type est obligatoire.";
+
+        Task task = taskRepository.findById(taskId);
+        if (task == null) return "Tâche introuvable.";
+
+        // On note quels champs changent pour l'historique
+        StringBuilder changes = new StringBuilder();
+        if (!title.trim().equals(task.getTitle())) changes.append("titre, ");
+        if (!java.util.Objects.equals(
+                description == null ? "" : description.trim(),
+                task.getDescription() == null ? "" : task.getDescription().trim()))
+            changes.append("description, ");
+        if (!typeId.equals(task.getTypeId())) changes.append("type, ");
+        String newAssignee = assigneeId == null || assigneeId.isEmpty() ? null : assigneeId;
+        if (!java.util.Objects.equals(newAssignee, task.getAssigneeId())) changes.append("assignation, ");
+
+        task.setTitle(title.trim());
+        task.setDescription(description);
+        task.setTypeId(typeId);
+        task.setAssigneeId(newAssignee);
+        taskRepository.update(task);
+
+        if (changes.length() > 0) {
+            String detail = changes.substring(0, changes.length() - 2);
+            TaskHistory h = new TaskHistory();
+            h.setTaskId(taskId);
+            h.setText("Tâche modifiée (" + detail + ") le " + LocalDateTime.now().format(FMT));
+            h.setCreatedAt(LocalDateTime.now());
+            taskRepository.saveHistory(h);
+        }
         return null;
     }
 

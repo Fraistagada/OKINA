@@ -136,7 +136,7 @@ class BoardServiceTest {
         }
 
         private User utilisateur(String id, String pseudo) {
-            return new User(id, pseudo, pseudo + "@mail.com", "hash", LocalDateTime.now());
+            return new User(id, pseudo, pseudo + "@mail.com", "hash", null, LocalDateTime.now());
         }
     }
 }

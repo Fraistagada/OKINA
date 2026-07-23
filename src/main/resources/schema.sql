@@ -69,12 +69,29 @@ CREATE TABLE IF NOT EXISTS attachment (
     FOREIGN KEY (task_id) REFERENCES task(id)
 );
 
+-- Contenu binaire des pièces jointes (ajout rétroactif sur les bases existantes)
+ALTER TABLE attachment ADD COLUMN IF NOT EXISTS data BLOB;
+
+-- Couleur d'avatar choisie par l'utilisateur (ajout rétroactif)
+ALTER TABLE app_user ADD COLUMN IF NOT EXISTS avatar_color VARCHAR(10);
+
 CREATE TABLE IF NOT EXISTS task_history (
     id         VARCHAR(36) NOT NULL PRIMARY KEY,
     task_id    VARCHAR(36) NOT NULL,
     text       VARCHAR(300) NOT NULL,
     created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (task_id) REFERENCES task(id)
+);
+
+CREATE TABLE IF NOT EXISTS notification (
+    id         VARCHAR(36)  NOT NULL PRIMARY KEY,
+    user_id    VARCHAR(36)  NOT NULL,
+    board_id   VARCHAR(36),
+    task_id    VARCHAR(36),
+    text       VARCHAR(300) NOT NULL,
+    is_read    BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES app_user(id)
 );
 
 MERGE INTO kanban_column (id, title, color, position) VALUES
